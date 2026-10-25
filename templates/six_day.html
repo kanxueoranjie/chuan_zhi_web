@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>请假申请 · 2603 班</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 0 0 40px;
+    background: linear-gradient(160deg, #eef2f7 0%, #e6edf6 100%);
+    color: #1e2a44;
+  }
+
+  .wrap { width: min(1080px, 100%); margin: 0 auto; padding: 22px 20px 0; }
+
+  /* ================= 顶栏 ================= */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 18px rgba(15, 30, 60, .09);
+    position: sticky;
+    top: 14px;
+    z-index: 50;
+  }
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 9px;
+    background: #f1f5fb;
+    color: #4a5b74;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: background .2s, color .2s;
+    flex-shrink: 0;
+  }
+  .back:hover { background: #e2eaf6; color: #2563eb; }
+
+  .topbar .ttl {
+    flex: 1;
+    min-width: 0;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .topbar .ttl .em { font-size: 20px; }
+
+  .me {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 13px 6px 6px;
+    border-radius: 30px;
+    background: #f7f9fc;
+    border: 1px solid #e8eef7;
+    flex-shrink: 0;
+  }
+  .me .av {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .me .nm { font-size: 13.5px; font-weight: 600; line-height: 1.25; }
+  .me .rl { font-size: 11px; color: #8a94a6; line-height: 1.25; }
+
+  .logout {
+    padding: 9px 17px;
+    border-radius: 9px;
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background .2s;
+    flex-shrink: 0;
+  }
+  .logout:hover { background: #fee2e2; }
+
+  /* ================= 布局 ================= */
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .panel {
+    background: #fff;
+    border: 1px solid #e4eaf2;
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(15, 30, 60, .08);
+    overflow: hidden;
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 15px 19px;
+    border-bottom: 1px solid #eef2f8;
+  }
+  .panel-head .t { font-size: 15px; font-weight: 700; flex: 1; }
+
+  .panel-body { padding: 20px 22px 24px; }
+
+  /* ================= 表单 ================= */
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .field { margin-bottom: 17px; }
+
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a6a82;
+    margin-bottom: 7px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .field label .req { color: #ef4444; font-weight: 700; }
+  .field label .lock {
+    font-size: 11px;
+    font-weight: 500;
+    color: #a8b2c1;
+    background: #f1f5fb;
+    padding: 1px 7px;
+    border-radius: 20px;
+  }
+
+  input[type="text"],
+  input[type="date"],
+  textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #d7dfeb;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-family: inherit;
+    color: #1e2a44;
+    outline: none;
+    background: #fbfcfe;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+  }
+  input:focus, textarea:focus {
+    border-color: #3b82f6;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .14);
+  }
+  input[readonly] {
+    background: #f1f5fb;
+    color: #6b7788;
+    cursor: not-allowed;
+  }
+  input[readonly]:focus {
+    border-color: #d7dfeb;
+    box-shadow: none;
+    background: #f1f5fb;
+  }
+
+  textarea { resize: vertical; min-height: 96px; line-height: 1.7; }
+
+  .counter {
+    text-align: right;
+    font-size: 11.5px;
+    color: #a8b2c1;
+    margin-top: 5px;
+  }
+  .counter.warn { color: #f59e0b; }
+
+  /* ================= 上传区 ================= */
+  #drop {
+    border: 2px dashed #d7dfeb;
+    border-radius: 12px;
+    background: #fbfcfe;
+    padding: 26px 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+  #drop:hover, #drop.over {
+    border-color: #3b82f6;
+    background: #f2f8ff;
+  }
+  #drop .ico { font-size: 30px; display: block; margin-bottom: 8px; }
+  #drop .main { font-size: 14px; color: #4a5b74; font-weight: 600; }
+  #drop .hint { font-size: 12px; color: #a8b2c1; margin-top: 5px; }
+  #drop input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  #previewBox { display: none; margin-top: 14px; position: relative; }
+  #previewBox.on { display: block; }
+  #previewBox img {
+    width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+    border-radius: 12px;
+    border: 1px solid #e4eaf2;
+    background: #f7f9fc;
+    display: block;
+  }
+  #previewBox .meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 9px;
+    font-size: 12.5px;
+    color: #8a94a6;
+  }
+  #previewBox .meta .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #previewBox .del {
+    border: 0;
+    background: #fef2f2;
+    color: #dc2626;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .2s;
+  }
+  #previewBox .del:hover { background: #fee2e2; }
+
+  /* ================= 提交按钮 ================= */
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #eef2f8;
+  }
+  .btn {
+    padding: 12px 26px;
+    border: 0;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s, box-shadow .2s, transform .15s;
+  }
+  .btn.primary {
+    background: linear-gradient(135deg, #3b82f6, #4f46e5);
+    color: #fff;
+    flex: 1;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, .32);
+  }
+  .btn.primary:hover:not(:disabled) {
+    box-shadow: 0 8px 22px rgba(59, 130, 246, .45);
+    transform: translateY(-1px);
+  }
+  .btn.primary:disabled {
+    background: #a9b8cc;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn.ghost {
+    background: #f1f5fb;
+    color: #4a5b74;
+  }
+  .btn.ghost:hover { background: #e2eaf6; }
+
+  /* ================= 结果提示 ================= */
+  .result {
+    display: none;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 18px;
+  }
+  .result.on { display: flex; }
+  .result.ok  { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+  .result.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  .result .ic { font-size: 18px; flex-shrink: 0; }
+
+  /* ================= 右侧说明 ================= */
+  .tips { display: flex; flex-direction: column; gap: 12px; }
+
+  .tip-item {
+    display: flex;
+    gap: 11px;
+    padding: 13px 15px;
+    background: #f7f9fc;
+    border: 1px solid #e8eef7;
+    border-radius: 11px;
+  }
+  .tip-item .n {
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .tip-item .c { font-size: 13.5px; line-height: 1.7; color: #5a6a82; }
+  .tip-item .c b { color: #1e2a44; }
+
+  .warn-box {
+    display: flex;
+    gap: 10px;
+    padding: 13px 15px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 11px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #92400e;
+  }
+  .warn-box .ic { font-size: 15px; flex-shrink: 0; }
+
+  /* ================= 移动端 ================= */
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 14px 12px 0; }
+    .topbar { flex-wrap: wrap; padding: 12px 14px; top: 8px; }
+    .topbar .ttl { font-size: 16px; order: 1; flex: 1 1 100%; margin-bottom: 4px; }
+    .back { order: 0; }
+    .me .nm, .me .rl { display: none; }
+    .me { padding: 5px; }
+    .logout { order: 2; }
+    .panel-body { padding: 16px; }
+    .row2 { grid-template-columns: 1fr; gap: 0; }
+    .actions { flex-direction: column; }
+    .btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ================= 顶栏 ================= -->
+  <div class="topbar">
+    <a class="back" href="{{ url_for('index') }}">← 返回</a>
+    <div class="ttl"><span class="em">📝</span>请假申请</div>
+
+    <div class="me">
+      <div class="av">班</div>
+      <div>
+        <div class="nm">2603 班</div>
+        <div class="rl">请假申请</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- ================= 左：表单 ================= -->
+    <div class="panel">
+      <div class="panel-head">
+        <span>📋</span>
+        <span class="t">填写申请信息</span>
+      </div>
+
+      <div class="panel-body">
+
+        <div class="result" id="result">
+          <span class="ic" id="resultIc">✅</span>
+          <span id="resultText"></span>
+        </div>
+
+        <form id="leaveForm" novalidate>
+
+          <!-- 学号 / 姓名 -->
+          <div class="row2">
+            <div class="field">
+              <label for="fSid">学号 <span class="req">*</span></label>
+              <input type="text" name="student_id" id="fSid"
+                     placeholder="例如 20260301" required>
+            </div>
+            <div class="field">
+              <label for="fName">姓名 <span class="req">*</span></label>
+              <input type="text" name="name" id="fName"
+                     placeholder="例如 张伟" required>
+            </div>
+          </div>
+
+          <!-- 请假时间 -->
+          <div class="field">
+            <label>请假时间 <span class="req">*</span></label>
+            <input type="date" name="time" id="fTime" required>
+          </div>
+
+          <!-- 请假理由 -->
+          <div class="field">
+            <label>请假理由 <span class="req">*</span></label>
+            <textarea name="six_day_reason" id="fReason" maxlength="255"
+                      placeholder="请具体说明请假原因，例如：发热 38.5℃，医院建议居家休息三天"></textarea>
+            <div class="counter" id="counter">0 / 255</div>
+          </div>
+
+          <!-- 证明图片 -->
+          <div class="field">
+            <label>证明图片 <span class="req">*</span></label>
+
+            <div id="drop">
+              <span class="ico">📷</span>
+              <div class="main">点击选择 或 拖拽图片到这里</div>
+              <div class="hint">支持 JPG / PNG，建议不超过 5MB</div>
+              <input type="file" name="picture" id="fPic" accept="image/*">
+            </div>
+
+            <div id="previewBox">
+              <img id="previewImg" alt="预览">
+              <div class="meta">
+                <span class="nm" id="previewName"></span>
+                <span id="previewSize"></span>
+                <button type="button" class="del" id="delBtn">移除</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 操作 -->
+          <div class="actions">
+            <button type="submit" class="btn primary" id="submitBtn">提交申请</button>
+            <button type="reset" class="btn ghost" id="resetBtn">重填</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= 右：说明 ================= -->
+    <div class="tips">
+      <div class="panel">
+        <div class="panel-head">
+          <span>📌</span>
+          <span class="t">提交须知</span>
+        </div>
+        <div class="panel-body">
+          <div class="tips">
+
+            <div class="tip-item">
+              <span class="n">1</span>
+              <div class="c"><b>信息要真实。</b>学号和姓名请如实填写，老师需要核对。</div>
+            </div>
+
+            <div class="tip-item">
+              <span class="n">2</span>
+              <div class="c"><b>理由要具体。</b>写清病因、事由或活动名称，方便老师判断。</div>
+            </div>
+
+            <div class="tip-item">
+              <span class="n">3</span>
+              <div class="c"><b>必须上传证明。</b>可以是诊断证明、家长说明、活动通知等图片。</div>
+            </div>
+
+            <div class="tip-item">
+              <span class="n">4</span>
+              <div class="c"><b>提交后等待处理。</b>老师审核通过后会在班级群通知。</div>
+            </div>
+
+          </div>
+
+          <div class="warn-box" style="margin-top:14px; background:#eff6ff; border-color:#bfdbfe; color:#1e40af;">
+            <span class="ic">💡</span>
+            <div>你可以<b>提交多次请假申请</b>，每次都会单独记录，互不影响。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span>🤖</span>
+          <span class="t">有问题问班班</span>
+        </div>
+        <div class="panel-body" style="font-size:13.5px;line-height:1.9;color:#5a6a82;">
+          右下角的<b>班班</b>随时在线，可以帮你：
+          <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:7px;">
+            <span class="tip-item" style="padding:6px 12px;font-size:12.5px;border-radius:20px;">怎么请假</span>
+            <span class="tip-item" style="padding:6px 12px;font-size:12.5px;border-radius:20px;">谁能审批</span>
+            <span class="tip-item" style="padding:6px 12px;font-size:12.5px;border-radius:20px;">班费情况</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var form     = document.getElementById("leaveForm");
+  var fTime    = document.getElementById("fTime");
+  var fReason  = document.getElementById("fReason");
+  var fPic     = document.getElementById("fPic");
+  var drop     = document.getElementById("drop");
+  var pBox     = document.getElementById("previewBox");
+  var pImg     = document.getElementById("previewImg");
+  var pName    = document.getElementById("previewName");
+  var pSize    = document.getElementById("previewSize");
+  var delBtn   = document.getElementById("delBtn");
+  var submitBn = document.getElementById("submitBtn");
+  var resetBn  = document.getElementById("resetBtn");
+  var counter  = document.getElementById("counter");
+  var result   = document.getElementById("result");
+  var resIc    = document.getElementById("resultIc");
+  var resText  = document.getElementById("resultText");
+
+  var MAX_MB = 5;
+
+  /* ---------- 默认日期 = 今天 ---------- */
+  (function () {
+    var d = new Date();
+    var iso = d.getFullYear() + "-"
+      + String(d.getMonth() + 1).padStart(2, "0") + "-"
+      + String(d.getDate()).padStart(2, "0");
+    fTime.value = iso;
+  })();
+
+  /* ---------- 字数统计 ---------- */
+  fReason.addEventListener("input", function () {
+    var n = fReason.value.length;
+    counter.textContent = n + " / 255";
+    counter.classList.toggle("warn", n > 220);
+  });
+
+  /* ---------- 图片预览 ---------- */
+  function showPreview(file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("只能上传图片文件");
+      fPic.value = "";
+      return;
+    }
+    if (file.size > MAX_MB * 1024 * 1024) {
+      alert("图片不能超过 " + MAX_MB + "MB");
+      fPic.value = "";
+      return;
+    }
+    pImg.src = URL.createObjectURL(file);
+    pName.textContent = file.name;
+    pSize.textContent = (file.size / 1024 / 1024).toFixed(2) + " MB";
+    pBox.classList.add("on");
+  }
+
+  fPic.addEventListener("change", function () {
+    showPreview(fPic.files[0]);
+  });
+
+  /* ---------- 拖拽 ---------- */
+  ["dragenter", "dragover"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) {
+      e.preventDefault();
+      drop.classList.add("over");
+    });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) {
+      e.preventDefault();
+      drop.classList.remove("over");
+    });
+  });
+  drop.addEventListener("drop", function (e) {
+    var f = e.dataTransfer.files[0];
+    if (!f) return;
+    fPic.files = e.dataTransfer.files;   // 塞进 input
+    showPreview(f);
+  });
+
+  /* ---------- 移除图片 ---------- */
+  delBtn.addEventListener("click", function () {
+    fPic.value = "";
+    pImg.removeAttribute("src");
+    pBox.classList.remove("on");
+  });
+
+  /* ---------- 结果提示 ---------- */
+  function showResult(ok, msg) {
+    resIc.textContent = ok ? "✅" : "⚠️";
+    resText.textContent = msg;
+    result.className = "result on " + (ok ? "ok" : "err");
+    result.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  /* ---------- 提交 ---------- */
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    result.classList.remove("on");
+
+    var sid    = document.getElementById("fSid").value.trim();
+    var nm     = document.getElementById("fName").value.trim();
+    var reason = fReason.value.trim();
+
+    if (!sid)               { showResult(false, "请填写学号"); return; }
+    if (!nm)                { showResult(false, "请填写姓名"); return; }
+    if (!fTime.value)       { showResult(false, "请选择请假时间"); return; }
+    if (!reason)            { showResult(false, "请填写请假理由"); return; }
+    if (reason.length < 5)  { showResult(false, "请假理由太简短了，请写具体一些"); return; }
+    if (!fPic.files.length) { showResult(false, "请上传一张证明图片"); return; }
+
+    var fd = new FormData(form);
+    submitBn.disabled = true;
+    submitBn.textContent = "提交中…";
+
+    fetch("/six_day", { method: "POST", body: fd })
+      .then(function (res) {
+        return res.json().then(function (d) { return { ok: res.ok, d: d }; });
+      })
+      .then(function (r) {
+        if (r.ok) {
+          showResult(true, "提交成功！老师审核后会通知你。" + (r.d.message ? "" : ""));
+          form.reset();
+          delBtn.click();
+          var dd = new Date();
+          fTime.value = dd.getFullYear() + "-"
+            + String(dd.getMonth() + 1).padStart(2, "0") + "-"
+            + String(dd.getDate()).padStart(2, "0");
+          counter.textContent = "0 / 255";
+        } else {
+          showResult(false, (r.d && r.d.message) || "提交失败，请稍后再试");
+        }
+      })
+      .catch(function (err) {
+        showResult(false, "网络异常：" + err.message);
+      })
+      .finally(function () {
+        submitBn.disabled = false;
+        submitBn.textContent = "提交申请";
+      });
+  });
+
+  /* ---------- 重填 ---------- */
+  resetBn.addEventListener("click", function () {
+    setTimeout(function () {
+      delBtn.click();
+      counter.textContent = "0 / 255";
+      result.classList.remove("on");
+    }, 0);
+  });
+})();
+</script>
+
+</body>
+</html>

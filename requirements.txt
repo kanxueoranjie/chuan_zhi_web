@@ -1,0 +1,29 @@
+# ============================================================
+#  chuan_zhi_web 依赖清单
+#  安装： pip install -r requirements.txt
+#  说明： 用版本范围而不是写死版本，本地（Python 3.14）
+#         和服务器（Python 3.8）都能自动装到合适的版本
+# ============================================================
+
+# ---------- Web 框架 ----------
+# Flask 自带 Jinja2、Werkzeug，密码哈希也是用 Werkzeug 提供的
+Flask>=3.0,<4
+
+# ---------- 数据库 ----------
+# MySQL 驱动，代码里 import pymysql 就是这个
+PyMySQL>=1.1,<2
+
+# ---------- 配置 ----------
+# 用来读取 .env 文件里的数据库密码、API Key 等
+python-dotenv>=1.0,<2
+
+# ---------- 大模型 ----------
+# DeepSeek 用的是 OpenAI 兼容接口，所以装 openai 官方 SDK
+# 注意：Python 3.8 最高只能装 2.x，Python 3.9+ 可以装 3.x
+#       这里写范围，让 pip 按当前 Python 版本自己挑
+openai>=2.2,<4
+
+# ---------- 生产部署 ----------
+# 正式上线时用 gunicorn 跑，本地开发直接 python __init__.py 就行
+# 提醒：gunicorn 只能在 Linux / macOS 上运行，Windows 下装了也启动不了
+gunicorn>=21,<24

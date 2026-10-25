@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>首页 · 2603 班</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 28px 20px 48px;
+    background: linear-gradient(160deg, #eef2f7 0%, #e6edf6 100%);
+  }
+
+  .wrap { width: min(860px, 100%); margin: 0 auto; }
+
+  /* ================= 顶部：当前登录人 ================= */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+    box-shadow: 0 4px 18px rgba(15, 30, 60, .09);
+  }
+  .avatar {
+    width: 46px; height: 46px;
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .who { flex: 1; min-width: 0; }
+  .who .name { font-size: 16px; color: #1e2a44; font-weight: 700; }
+  .who .sid  { font-size: 12.5px; color: #8a94a6; margin-top: 2px; }
+
+  .role {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .role.student   { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+  .role.admin     { background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; }
+  .role.only_user { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+
+  .logout {
+    padding: 9px 18px;
+    border-radius: 9px;
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background .2s;
+  }
+  .logout:hover { background: #fee2e2; }
+
+  /* ================= 标题 ================= */
+  .page-title { font-size: 20px; color: #1e2a44; margin-bottom: 4px; }
+  .page-sub { font-size: 13.5px; color: #8a94a6; margin-bottom: 20px; }
+
+  /* ================= 功能入口卡片 ================= */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 16px;
+  }
+
+  a.card {
+    display: block;
+    background: #fff;
+    border: 1px solid #e4eaf2;
+    border-radius: 14px;
+    padding: 22px 20px;
+    text-decoration: none;
+    box-shadow: 0 3px 14px rgba(15, 30, 60, .07);
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+  }
+  a.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(15, 30, 60, .13);
+    border-color: #cfdcf0;
+  }
+  a.card .ico { font-size: 28px; margin-bottom: 12px; display: block; }
+  a.card .ttl { font-size: 16px; color: #1e2a44; font-weight: 700; margin-bottom: 6px; }
+  a.card .desc { font-size: 13px; color: #8a94a6; line-height: 1.65; }
+
+  a.card.admin-only  { border-left: 3px solid #6366f1; }
+  a.card.owner-only  { border-left: 3px solid #10b981; }
+
+  .lock-tip {
+    margin-top: 26px;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px dashed #d7dfeb;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #8a94a6;
+    line-height: 1.8;
+  }
+  .lock-tip b { color: #5a6a82; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ================= 标题 ================= -->
+  <div class="page-title">2603 班 · 工作台</div>
+  <div class="page-sub">请选择要进入的功能</div>
+
+  <!-- ================= 功能入口 ================= -->
+  <div class="grid">
+
+    <!-- 所有人可见 -->
+    <a class="card" href="{{ url_for('class_funds') }}">
+      <span class="ico">💰</span>
+      <div class="ttl">班费公示</div>
+      <div class="desc">查看班费收支明细，含 AI 智能分析</div>
+    </a>
+
+    <a class="card" href="{{ url_for('six_day') }}">
+      <span class="ico">📝</span>
+      <div class="ttl">请假申请</div>
+      <div class="desc">填写请假理由、上传证明图片并提交</div>
+    </a>
+
+  </div>
+
+</div>
+
+</body>
+</html>
