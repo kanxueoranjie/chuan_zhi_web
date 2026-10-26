@@ -64,6 +64,19 @@ class ClassSQL:
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='班级请假表2603';
         """
 
+        # 学生账号表：登录名、密码哈希、角色
+        self.students_table = """
+        CREATE TABLE IF NOT EXISTS STUDENTS2603 (
+            student_id INT UNSIGNED NOT NULL COMMENT '学号',
+            username   VARCHAR(50)  NOT NULL COMMENT '登录名',
+            name       VARCHAR(50)  NOT NULL COMMENT '姓名',
+            password   VARCHAR(255) NOT NULL DEFAULT '' COMMENT '登录密码（哈希值，非明文）',
+            role       VARCHAR(20)  NOT NULL DEFAULT 'student' COMMENT '角色：student/admin/only_user',
+            PRIMARY KEY (student_id),
+            UNIQUE KEY uk_username (username)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='班级学生账号表2603';
+        """
+
 
     # 建数据库，平时用不到，库已经在 .env 里配好了
     def create_database(self):
@@ -131,6 +144,48 @@ class ClassSQL:
             print(e)
             # 查失败返回空列表，上层就不用再判断 None
             return []
+
+    # 新增一个账号，传进来的密码已经是哈希过的
+    def take_student_sql(self, name, student_id, password_hash, username=None):
+        # 没给登录名就用学号当登录名
+        if username is None:
+            username = str(student_id)
+        cursor = self.conn.cursor()
+        sql = """INSERT INTO STUDENTS2603 (student_id, username, name, password)
+                 VALUES (%s, %s, %s, %s)"""
+        cursor.execute(sql, (student_id, username, name, password_hash))
+        self.conn.commit()
+
+    # 查账号列表给页面用
+    # 密码只返回"有没有设置"，绝对不返回哈希内容
+    def get_student_id(self):
+        cursor = self.conn.cursor()
+        sql = """SELECT student_id,
+                        username,
+                        name,
+                        role,
+                        (password <> '') AS has_password
+                 FROM STUDENTS2603
+                 ORDER BY role DESC, student_id"""
+        try:
+            cursor.execute(sql)
+            return cursor.fetchall()
+        except pymysql.MySQLError as e:
+            print(e)
+            return []
+
+    # 按登录名查一个人，登录时校验密码用
+    def get_user_by_username(self, username):
+        cursor = self.conn.cursor()
+        sql = """SELECT student_id, username, name, password, role
+                 FROM STUDENTS2603
+                 WHERE username = %s"""
+        try:
+            cursor.execute(sql, (username,))
+            return cursor.fetchone()          # 没找到返回 None
+        except pymysql.MySQLError as e:
+            print(e)
+            return None
 
     # 用完把连接关掉，不然连接会越攒越多
     def close(self):

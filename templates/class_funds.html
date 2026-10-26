@@ -330,12 +330,18 @@
     <div class="ttl"><span class="em">💰</span>班费公示</div>
 
     <div class="me">
-      <div class="av">班</div>
+      <div class="av">{{ (session.name or '?')[0] }}</div>
       <div>
-        <div class="nm">2603 班</div>
-        <div class="rl">班费公示</div>
+        <div class="nm">{{ session.name or '未知' }}</div>
+        <div class="rl">
+          {% if session.role == 'only_user' %}唯一用户
+          {% elif session.role == 'admin' %}超级用户
+          {% else %}普通用户{% endif %}
+        </div>
       </div>
     </div>
+
+    <a class="logout" href="{{ url_for('logout') }}">退出</a>
   </div>
 
   <!-- ================= 统计卡（按 kind 真算收支）================= -->

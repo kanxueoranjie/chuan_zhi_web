@@ -372,12 +372,18 @@
     <div class="ttl"><span class="em">📝</span>请假申请</div>
 
     <div class="me">
-      <div class="av">班</div>
+      <div class="av">{{ (session.name or '?')[0] }}</div>
       <div>
-        <div class="nm">2603 班</div>
-        <div class="rl">请假申请</div>
+        <div class="nm">{{ session.name or '未知' }}</div>
+        <div class="rl">
+          {% if session.role == 'only_user' %}唯一用户
+          {% elif session.role == 'admin' %}超级用户
+          {% else %}普通用户{% endif %}
+        </div>
       </div>
     </div>
+
+    <a class="logout" href="{{ url_for('logout') }}">退出</a>
   </div>
 
   <div class="layout">
@@ -398,17 +404,17 @@
 
         <form id="leaveForm" novalidate>
 
-          <!-- 学号 / 姓名 -->
+          <!-- 学号 / 姓名：自动填充，只读 -->
           <div class="row2">
             <div class="field">
-              <label for="fSid">学号 <span class="req">*</span></label>
+              <label>学号 <span class="lock">自动填充</span></label>
               <input type="text" name="student_id" id="fSid"
-                     placeholder="例如 20260301" required>
+                     value="{{ session.student_id or '' }}" readonly>
             </div>
             <div class="field">
-              <label for="fName">姓名 <span class="req">*</span></label>
+              <label>姓名 <span class="lock">自动填充</span></label>
               <input type="text" name="name" id="fName"
-                     placeholder="例如 张伟" required>
+                     value="{{ session.name or '' }}" readonly>
             </div>
           </div>
 
@@ -469,7 +475,7 @@
 
             <div class="tip-item">
               <span class="n">1</span>
-              <div class="c"><b>信息要真实。</b>学号和姓名请如实填写，老师需要核对。</div>
+              <div class="c"><b>信息要真实。</b>学号和姓名已按当前登录账号自动填好，无需修改。</div>
             </div>
 
             <div class="tip-item">
@@ -618,12 +624,7 @@
     e.preventDefault();
     result.classList.remove("on");
 
-    var sid    = document.getElementById("fSid").value.trim();
-    var nm     = document.getElementById("fName").value.trim();
     var reason = fReason.value.trim();
-
-    if (!sid)               { showResult(false, "请填写学号"); return; }
-    if (!nm)                { showResult(false, "请填写姓名"); return; }
     if (!fTime.value)       { showResult(false, "请选择请假时间"); return; }
     if (!reason)            { showResult(false, "请填写请假理由"); return; }
     if (reason.length < 5)  { showResult(false, "请假理由太简短了，请写具体一些"); return; }

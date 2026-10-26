@@ -116,6 +116,22 @@
 
 <div class="wrap">
 
+  <!-- ================= 顶部：我是谁 ================= -->
+  <div class="topbar">
+    <div class="avatar">{{ (session.name or '?')[0] }}</div>
+    <div class="who">
+      <div class="name">{{ session.name or '未知用户' }}</div>
+      <div class="sid">账号 {{ session.username or '-' }}</div>
+    </div>
+    <span class="role {{ session.role or 'student' }}">
+      {% if session.role == 'only_user' %}唯一用户
+      {% elif session.role == 'admin' %}超级用户
+      {% else %}普通用户
+      {% endif %}
+    </span>
+    <a class="logout" href="{{ url_for('logout') }}">退出登录</a>
+  </div>
+
   <!-- ================= 标题 ================= -->
   <div class="page-title">2603 班 · 工作台</div>
   <div class="page-sub">请选择要进入的功能</div>
