@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>403 · 无权限</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #1e2a44 0%, #16324f 60%, #1b3b5c 100%);
+  }
+  .card {
+    width: min(430px, 100%);
+    background: #fff;
+    border-radius: 18px;
+    padding: 42px 34px 36px;
+    text-align: center;
+    box-shadow: 0 22px 64px rgba(0, 0, 0, .38);
+    animation: rise .4s ease;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .icon {
+    width: 68px; height: 68px;
+    margin: 0 auto 18px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: #fef2f2;
+    font-size: 32px;
+  }
+  h1 { font-size: 25px; color: #1e2a44; letter-spacing: .5px; }
+  .msg {
+    color: #6b7788;
+    font-size: 14.5px;
+    margin: 16px 0 6px;
+    line-height: 2;
+  }
+  .role {
+    display: inline-block;
+    padding: 4px 13px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 600;
+    margin: 3px 2px;
+    white-space: nowrap;
+  }
+  .role.mine { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+  .role.need { background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; }
+
+  .arrow { color: #b6c0cf; font-size: 13px; margin: 10px 0; }
+
+  .btns {
+    margin-top: 28px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  a.btn {
+    padding: 11px 24px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 14.5px;
+    font-weight: 600;
+    transition: background .2s, box-shadow .2s;
+  }
+  a.primary { background: #3b82f6; color: #fff; }
+  a.primary:hover { background: #2563eb; box-shadow: 0 8px 22px rgba(59, 130, 246, .4); }
+  a.ghost { background: #eef2f8; color: #476189; }
+  a.ghost:hover { background: #e2e8f0; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="icon">🚫</div>
+  <h1>403 无权限访问</h1>
+
+  <p class="msg">
+    你当前的身份是
+    <span class="role mine">{{ my_name or '未知' }} · {{ my or 'guest' }}</span>
+  </p>
+
+  <div class="arrow">↓ 这个页面至少需要 ↓</div>
+
+  <p class="msg">
+    <span class="role need">{{ need }}</span>
+  </p>
+
+  <div class="btns">
+    <a class="btn primary" href="/">返回首页</a>
+    <a class="btn ghost" href="/logout">切换账号</a>
+  </div>
+</div>
+
+</body>
+</html>
