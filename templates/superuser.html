@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>后台录入 · 2603 班</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 0 0 40px;
+    background: linear-gradient(160deg, #eef2f7 0%, #e6edf6 100%);
+    color: #1e2a44;
+  }
+
+  .wrap { width: min(860px, 100%); margin: 0 auto; padding: 22px 20px 0; }
+
+  /* ================= 顶栏 ================= */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 18px rgba(15, 30, 60, .09);
+    position: sticky;
+    top: 14px;
+    z-index: 50;
+  }
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 9px;
+    background: #f1f5fb;
+    color: #4a5b74;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: background .2s, color .2s;
+    flex-shrink: 0;
+  }
+  .back:hover { background: #e2eaf6; color: #2563eb; }
+
+  .topbar .ttl {
+    flex: 1;
+    min-width: 0;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .topbar .ttl .em { font-size: 20px; }
+
+  .me {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 13px 6px 6px;
+    border-radius: 30px;
+    background: #f7f9fc;
+    border: 1px solid #e8eef7;
+    flex-shrink: 0;
+  }
+  .me .av {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .me .nm { font-size: 13.5px; font-weight: 600; line-height: 1.25; }
+  .me .rl { font-size: 11px; color: #8a94a6; line-height: 1.25; }
+
+  .logout {
+    padding: 9px 17px;
+    border-radius: 9px;
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background .2s;
+    flex-shrink: 0;
+  }
+  .logout:hover { background: #fee2e2; }
+
+  /* ================= 卡片 ================= */
+  .panel {
+    background: #fff;
+    border: 1px solid #e4eaf2;
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(15, 30, 60, .08);
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 15px 22px;
+    border-bottom: 1px solid #eef2f8;
+  }
+  .panel-head .t { font-size: 15px; font-weight: 700; flex: 1; }
+  .panel-body { padding: 22px 24px 26px; }
+
+  /* ================= 类型切换（大按钮） ================= */
+  .kind-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .kind-switch label {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 18px;
+    border: 2px solid #e4eaf2;
+    border-radius: 12px;
+    background: #fbfcfe;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+  }
+  .kind-switch label:hover { border-color: #cfdcf0; background: #f7fafe; }
+  .kind-switch input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .kind-switch .ic { font-size: 24px; line-height: 1; }
+  .kind-switch .tx { line-height: 1.4; }
+  .kind-switch .tx b { display: block; font-size: 15px; color: #1e2a44; }
+  .kind-switch .tx span { font-size: 12px; color: #8a94a6; }
+
+  /* 选中：收入（绿） */
+  .kind-switch label.sel-in {
+    border-color: #10b981;
+    background: #ecfdf5;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, .18);
+  }
+  .kind-switch label.sel-in .tx b { color: #047857; }
+
+  /* 选中：支出（红） */
+  .kind-switch label.sel-out {
+    border-color: #ef4444;
+    background: #fef2f2;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, .16);
+  }
+  .kind-switch label.sel-out .tx b { color: #b91c1c; }
+
+  /* ================= 表单字段 ================= */
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a6a82;
+    margin-bottom: 7px;
+  }
+  .field label .req { color: #ef4444; font-weight: 700; }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="date"] {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #d7dfeb;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-family: inherit;
+    color: #1e2a44;
+    outline: none;
+    background: #fbfcfe;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+  }
+  input:focus {
+    border-color: #3b82f6;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .14);
+  }
+  input::placeholder { color: #b6c0cf; }
+
+  .hint { font-size: 12px; color: #a8b2c1; margin-top: 6px; line-height: 1.6; }
+
+  /* ================= 结果提示 ================= */
+  .result {
+    display: none;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 18px;
+  }
+  .result.on { display: flex; }
+  .result.ok  { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+  .result.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  .result .ic { font-size: 18px; flex-shrink: 0; }
+
+  /* ================= 提交 ================= */
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #eef2f8;
+  }
+  .btn {
+    padding: 12px 26px;
+    border: 0;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s, box-shadow .2s, transform .15s;
+  }
+  .btn.primary {
+    background: linear-gradient(135deg, #3b82f6, #4f46e5);
+    color: #fff;
+    flex: 1;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, .32);
+  }
+  .btn.primary:hover:not(:disabled) {
+    box-shadow: 0 8px 22px rgba(59, 130, 246, .45);
+    transform: translateY(-1px);
+  }
+  .btn.primary:disabled {
+    background: #a9b8cc;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn.ghost { background: #f1f5fb; color: #4a5b74; }
+  .btn.ghost:hover { background: #e2eaf6; }
+
+  /* ================= 底部快捷入口 ================= */
+  .links {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+  .links a {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px solid #e4eaf2;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #1e2a44;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 3px 12px rgba(15, 30, 60, .06);
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+  }
+  .links a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(15, 30, 60, .12);
+    border-color: #cfdcf0;
+  }
+  .links a .ar { margin-left: auto; color: #b6c0cf; }
+
+  /* ================= 移动端 ================= */
+  @media (max-width: 640px) {
+    .wrap { padding: 14px 12px 0; }
+    .topbar { flex-wrap: wrap; padding: 12px 14px; top: 8px; }
+    .topbar .ttl { font-size: 16px; order: 1; flex: 1 1 100%; margin-bottom: 4px; }
+    .back { order: 0; }
+    .me .nm, .me .rl { display: none; }
+    .me { padding: 5px; }
+    .logout { order: 2; }
+    .panel-body { padding: 16px; }
+    .row2 { grid-template-columns: 1fr; gap: 0; }
+    .kind-switch { grid-template-columns: 1fr; }
+    .actions { flex-direction: column; }
+    .btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ================= 顶栏 ================= -->
+  <div class="topbar">
+    <a class="back" href="{{ url_for('index') }}">← 返回</a>
+    <div class="ttl"><span class="em">🗂️</span>后台录入</div>
+
+    <div class="me">
+      <div class="av">{{ (session.name or '?')[0] }}</div>
+      <div>
+        <div class="nm">{{ session.name or '未知' }}</div>
+        <div class="rl">
+          {% if session.role == 'only_user' %}唯一用户
+          {% elif session.role == 'admin' %}超级用户
+          {% else %}普通用户{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <a class="logout" href="{{ url_for('logout') }}">退出</a>
+  </div>
+
+  <!-- ================= 录入表单 ================= -->
+  <div class="panel">
+    <div class="panel-head">
+      <span>💰</span>
+      <span class="t">录入班费记录</span>
+    </div>
+
+    <div class="panel-body">
+
+      <div class="result" id="result">
+        <span class="ic" id="resultIc">✅</span>
+        <span id="resultText"></span>
+      </div>
+
+      <form id="moneyForm" novalidate>
+
+        <!-- 类型：收入 / 支出 -->
+        <div class="field">
+          <label>类型 <span class="req">*</span></label>
+          <div class="kind-switch" id="kindSwitch">
+            <label data-kind="in">
+              <input type="radio" name="kind" value="in">
+              <span class="ic">💰</span>
+              <span class="tx">
+                <b>收入</b>
+                <span>班费收缴、补贴、退款等</span>
+              </span>
+            </label>
+            <label data-kind="out" class="sel-out">
+              <input type="radio" name="kind" value="out" checked>
+              <span class="ic">💸</span>
+              <span class="tx">
+                <b>支出</b>
+                <span>购买物品、活动开销等</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 内容 -->
+        <div class="field">
+          <label for="content">内容 <span class="req">*</span></label>
+          <input type="text" id="content" maxlength="120"
+                 placeholder="例如：班费收缴（每人 50 元）">
+          <div class="hint">写清楚是什么钱，方便以后查账</div>
+        </div>
+
+        <!-- 金额 / 日期 -->
+        <div class="row2">
+          <div class="field">
+            <label for="money">金额（元） <span class="req">*</span></label>
+            <input type="number" id="money" min="0.01" step="0.01"
+                   placeholder="例如：120.00">
+            <div class="hint">只填正数，收支方向由上面的类型决定</div>
+          </div>
+
+          <div class="field">
+            <label for="time">日期 <span class="req">*</span></label>
+            <input type="date" id="time">
+            <div class="hint">默认今天，可改成实际发生日期</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn primary" id="submitBtn">保存记录</button>
+          <button type="reset" class="btn ghost" id="resetBtn">重填</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= 快捷入口 ================= -->
+  <div class="links">
+    <a href="{{ url_for('class_funds') }}">
+      <span>📊</span> 查看班费公示
+      <span class="ar">→</span>
+    </a>
+    <a href="{{ url_for('six_day') }}">
+      <span>📝</span> 请假申请
+      <span class="ar">→</span>
+    </a>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var form     = document.getElementById("moneyForm");
+  var kindBox  = document.getElementById("kindSwitch");
+  var fContent = document.getElementById("content");
+  var fMoney   = document.getElementById("money");
+  var fTime    = document.getElementById("time");
+  var submitBn = document.getElementById("submitBtn");
+  var resetBn  = document.getElementById("resetBtn");
+  var result   = document.getElementById("result");
+  var resIc    = document.getElementById("resultIc");
+  var resText  = document.getElementById("resultText");
+
+  /* ---------- 日期：默认今天 ---------- */
+  function today() {
+    var d = new Date();
+    return d.getFullYear() + "-"
+      + String(d.getMonth() + 1).padStart(2, "0") + "-"
+      + String(d.getDate()).padStart(2, "0");
+  }
+  fTime.value = today();
+
+  /* ---------- 类型切换高亮 ---------- */
+  function paintKind() {
+    var checked = form.querySelector('input[name="kind"]:checked');
+    var val = checked ? checked.value : "out";
+    Array.prototype.forEach.call(kindBox.querySelectorAll("label"), function (lb) {
+      lb.classList.remove("sel-in", "sel-out");
+      if (lb.dataset.kind === val) lb.classList.add("sel-" + val);
+    });
+  }
+  kindBox.addEventListener("change", paintKind);
+  paintKind();
+
+  /* ---------- 结果提示 ---------- */
+  function showResult(ok, msg) {
+    resIc.textContent = ok ? "✅" : "⚠️";
+    resText.textContent = msg;
+    result.className = "result on " + (ok ? "ok" : "err");
+    result.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function currentKind() {
+    var checked = form.querySelector('input[name="kind"]:checked');
+    return checked ? checked.value : "out";
+  }
+
+  /* ---------- 提交 ---------- */
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    result.classList.remove("on");
+
+    var content = fContent.value.trim();
+    var money   = parseFloat(fMoney.value);
+    var time    = fTime.value;
+    var kind    = currentKind();
+
+    if (!content) { showResult(false, "请填写内容"); return; }
+    if (!fMoney.value.trim() || isNaN(money) || money <= 0) {
+      showResult(false, "金额必须是大于 0 的数字");
+      return;
+    }
+    if (!time) { showResult(false, "请选择日期"); return; }
+
+    submitBn.disabled = true;
+    submitBn.textContent = "保存中…";
+
+    fetch("/superuser", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: content,
+        money: money,
+        kind: kind,
+        time: time
+      })
+    })
+      .then(function (res) {
+        return res.json().then(function (d) { return { ok: res.ok, d: d }; });
+      })
+      .then(function (r) {
+        if (r.ok && r.d && r.d.ok) {
+          var label = (kind === "in") ? "收入" : "支出";
+          showResult(true, "保存成功！已记录一笔" + label + " " + money.toFixed(2) + " 元");
+          fContent.value = "";
+          fMoney.value = "";
+          fTime.value = today();
+        } else {
+          showResult(false, (r.d && r.d.msg) || "保存失败，请稍后再试");
+        }
+      })
+      .catch(function (err) {
+        showResult(false, "网络异常：" + err.message);
+      })
+      .finally(function () {
+        submitBn.disabled = false;
+        submitBn.textContent = "保存记录";
+      });
+  });
+
+  /* ---------- 重填 ---------- */
+  resetBn.addEventListener("click", function () {
+    setTimeout(function () {
+      result.classList.remove("on");
+      fTime.value = today();
+      var outRadio = form.querySelector('input[name="kind"][value="out"]');
+      if (outRadio) outRadio.checked = true;
+      paintKind();
+    }, 0);
+  });
+})();
+</script>
+
+</body>
+</html>

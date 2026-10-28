@@ -133,10 +133,12 @@ def compare(datas):
     return text, False
 
 # ==================== 角色 → 默认首页 ====================
-# 现在还没有各角色专属的页面，所以先统一回工作台
-# 等后台录入和控制台做出来，再按身份分开跳
+# 现在只有「后台录入」这一个管理页，所以班委和管理员都跳这儿
+# 等管理控制台做出来，管理员再单独跳过去
 def _home_of(role):
     """每个角色登录后的默认落地页"""
+    if role in ("admin", "only_user"):
+        return url_for("superuser")
     return url_for("index")
 
 
@@ -270,6 +272,42 @@ def six_day():
 
     # 成功返回 JSON，前端好处理
     return jsonify({'message': '提交成功'})
+
+# 超级管理员界面
+@app.route('/superuser', methods=["GET", "POST"])
+@role_required("admin")                 # admin 和 only_user 能进
+def superuser():
+    if request.method == "POST":
+        # 取出前端传来的 JSON
+        data = request.get_json(silent=True) or {}
+        print(data)                     # 调试用，正式上线可以删
+        content = data.get("content")
+        money = data.get("money")
+        time = data.get("time")
+        kind = data.get("kind", "out")
+
+        # 三项必填，少一项就报错
+        if not content or not money or not time:
+            return jsonify({"ok": False, "msg": "内容、金额和日期不能为空"}), 400
+
+        # 只认 in / out 两个值，其他一律当支出
+        if kind not in ("in", "out"):
+            kind = "out"
+
+        # 连数据库
+        sql = ClassSQL()
+        try:
+            sql.create_table(sql.money_sql)
+            # 存进班费表
+            sql.take_money_sql(content, money, time, kind)
+            return jsonify({"ok": True, "msg": "保存成功"})
+        except Exception as e:
+            # 存失败就把原因告诉前端
+            return jsonify({"ok": False, "msg": f"保存失败：{e}"}), 500
+        finally:
+            sql.close()
+
+    return render_template("superuser.html")
 
 # 本地运行时用这个入口，正式上线是 gunicorn 启动的
 if __name__ == '__main__':

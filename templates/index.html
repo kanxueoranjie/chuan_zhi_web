@@ -152,6 +152,15 @@
       <div class="desc">填写请假理由、上传证明图片并提交</div>
     </a>
 
+    <!-- 超级用户 + 唯一用户 -->
+    {% if session.role in ('admin', 'only_user') %}
+    <a class="card admin-only" href="{{ url_for('superuser') }}">
+      <span class="ico">🗂️</span>
+      <div class="ttl">后台录入</div>
+      <div class="desc">录入班费收支记录（管理员专用）</div>
+    </a>
+    {% endif %}
+
   </div>
 
 </div>
