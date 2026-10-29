@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>班级控制台 · 2603</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #eef2f7;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  /* ================= 外层 ================= */
+  .app {
+    display: flex;
+    width: min(1040px, 100%);
+    height: 660px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(15, 30, 60, .12);
+    overflow: hidden;
+  }
+
+  /* ================= 左侧导航 ================= */
+  .sidebar {
+    width: 208px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #1e2a44, #16203a);
+    color: #cfd8ea;
+    padding: 20px 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 8px 18px;
+    font-size: 16px; font-weight: 700; color: #fff; letter-spacing: .5px;
+  }
+  .logo .mark {
+    width: 30px; height: 30px;
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    background: #3b82f6; border-radius: 9px; font-size: 15px;
+  }
+  .logo .who { line-height: 1.32; min-width: 0; }
+  .logo .who .nm {
+    font-size: 14.5px; color: #fff;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .logo .who .rl { font-size: 11px; color: #7f8ca3; font-weight: 400; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    user-select: none;
+    white-space: nowrap;
+    transition: background .2s, color .2s, box-shadow .25s;
+  }
+  .nav-item .icon { width: 20px; text-align: center; font-size: 16px; }
+  .nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .nav-item.active {
+    background: #3b82f6; color: #fff;
+    box-shadow: 0 6px 16px rgba(59,130,246,.45);
+  }
+
+  /* 侧栏底部：退出登录 */
+  .side-foot { margin-top: auto; padding-top: 14px; }
+  .side-foot a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    color: #9aa6b8;
+    text-decoration: none;
+    font-size: 14.5px;
+    transition: background .2s, color .2s;
+  }
+  .side-foot a:hover { background: rgba(239,68,68,.16); color: #fca5a5; }
+  .side-foot a .icon { width: 20px; text-align: center; font-size: 15px; }
+
+  /* ================= 右侧内容区 ================= */
+  .content { position: relative; flex: 1; min-width: 0; overflow: hidden; }
+
+  .panel {
+    position: absolute; inset: 0;
+    padding: 28px 32px;
+    overflow-y: auto;
+    opacity: 0; visibility: hidden;
+    transform: translateY(14px);
+    transition: opacity .28s ease, transform .28s ease, visibility .28s;
+  }
+  .panel.active { opacity: 1; visibility: visible; transform: translateY(0); }
+  .panel::-webkit-scrollbar { width: 6px; }
+  .panel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+  .panel h2 { font-size: 22px; color: #1e2a44; }
+  .panel .subtitle { color: #8a94a6; font-size: 13.5px; margin: 6px 0 20px; }
+
+  /* ================= 数据卡片（班级详情） ================= */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 14px;
+    margin-bottom: 26px;
+  }
+  .stat-card {
+    background: #f7f9fc;
+    border: 1px solid #e4eaf2;
+    border-radius: 12px;
+    padding: 16px 14px;
+    text-align: center;
+    transition: box-shadow .2s, transform .2s, border-color .2s;
+  }
+  .stat-card:hover {
+    box-shadow: 0 6px 18px rgba(15,30,60,.10);
+    transform: translateY(-2px);
+    border-color: #cfdcf0;
+  }
+  .stat-icon { font-size: 20px; margin-bottom: 6px; opacity: .85; }
+  .stat-num {
+    font-size: 26px; font-weight: 700; color: #1e2a44;
+    line-height: 1.2; font-variant-numeric: tabular-nums;
+  }
+  .stat-label { font-size: 12.5px; color: #8a94a6; margin-top: 4px; }
+
+  .sec-title {
+    font-size: 15px; font-weight: 700; color: #1e2a44;
+    margin: 0 0 12px; padding-left: 9px;
+    border-left: 3px solid #3b82f6; line-height: 1.1;
+  }
+
+  /* ================= 请假记录 ================= */
+  .list { max-width: 100%; }
+  .row {
+    display: flex; gap: 16px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    transition: box-shadow .2s, transform .2s;
+  }
+  .row:hover { box-shadow: 0 6px 18px rgba(15,30,60,.10); transform: translateY(-1px); }
+  .row img {
+    width: 120px; height: 120px;
+    object-fit: cover; border-radius: 8px;
+    flex-shrink: 0; background: #eee;
+  }
+  .info {
+    flex: 1;
+    display: flex; flex-direction: column;
+    justify-content: space-between; min-width: 0;
+  }
+  .info .line {
+    font-size: 14.5px; line-height: 1.5;
+    word-break: break-all; color: #2b3650;
+  }
+  .info .label { color: #888; margin-right: 6px; }
+
+  /* 紧凑行（最近请假） */
+  .mini-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #eef2f8;
+    font-size: 14px;
+  }
+  .mini-row:last-child { border-bottom: none; }
+  .mini-row .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #3b82f6; flex-shrink: 0;
+  }
+  .mini-row .who { font-weight: 600; color: #1e2a44; min-width: 74px; }
+  .mini-row .why {
+    flex: 1; min-width: 0; color: #6b7788;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mini-row .when { color: #a2abba; font-size: 12.5px; flex-shrink: 0; }
+
+  .card {
+    background: #fff;
+    border: 1px solid #e4eaf2;
+    border-radius: 12px;
+    padding: 8px 6px;
+  }
+
+  /* ================= 学生账号卡片 ================= */
+  .student-card {
+    display: flex; align-items: center; gap: 14px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    transition: box-shadow .2s, transform .2s;
+  }
+  .student-card:hover { box-shadow: 0 6px 18px rgba(15,30,60,.10); transform: translateY(-1px); }
+
+  .avatar {
+    width: 42px; height: 42px;
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff; font-size: 16px; font-weight: 700;
+  }
+  .student-card .meta { flex: 1; min-width: 0; }
+  .student-card .meta .nm { font-size: 15px; color: #1e2a44; font-weight: 600; }
+  .student-card .meta .sid { font-size: 12.5px; color: #8a94a6; margin-top: 2px; }
+
+  .badges { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .badge {
+    font-size: 11.5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+    font-weight: 600;
+    line-height: 1.6;
+  }
+  .badge.ok   { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+  .badge.no   { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .badge.adm  { background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; }
+  .badge.stu  { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+  /* ================= 添加学生表单 ================= */
+  .toolbar {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding: 15px;
+    background: #f7f9fc;
+    border: 1px solid #e4eaf2;
+    border-radius: 12px;
+  }
+  .toolbar input {
+    padding: 10px 13px;
+    border: 1px solid #d7dfeb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    background: #fff;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .toolbar input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,.13);
+  }
+  .toolbar input#newSid  { width: 140px; }
+  .toolbar input#newName { width: 130px; }
+  .toolbar input#newPwd  { width: 150px; flex: 1; min-width: 120px; }
+  .toolbar button {
+    padding: 10px 22px;
+    border: 0; border-radius: 8px;
+    background: #3b82f6;
+    color: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s, box-shadow .2s;
+  }
+  .toolbar button:hover { background: #2563eb; box-shadow: 0 4px 12px rgba(59,130,246,.35); }
+  .toolbar button:disabled { background: #a9b8cc; cursor: not-allowed; box-shadow: none; }
+
+  /* ================= 空白面板占位 ================= */
+  .placeholder {
+    margin-top: 10px;
+    border: 1.5px dashed #d7dfeb;
+    border-radius: 12px;
+    padding: 44px 24px;
+    text-align: center;
+    color: #8a94a6;
+    font-size: 14px;
+    line-height: 2;
+    background: #fafbfd;
+  }
+  .placeholder .ph-icon { font-size: 30px; margin-bottom: 8px; opacity: .7; }
+  .placeholder code {
+    display: inline-block;
+    margin-top: 10px;
+    background: #eef2f8;
+    color: #476189;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12.5px;
+  }
+
+  .empty { text-align: center; color: #999; padding: 34px 0; }
+
+  /* ================= 轻提示 ================= */
+  .toast {
+    position: fixed;
+    top: 26px; left: 50%;
+    transform: translate(-50%, -16px);
+    background: #1e2a44;
+    color: #fff;
+    padding: 11px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    box-shadow: 0 8px 24px rgba(15,30,60,.28);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s, transform .25s;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.ok  { background: #16a34a; }
+  .toast.err { background: #dc2626; }
+
+  /* ================= 移动端 ================= */
+  @media (max-width: 720px) {
+    body { padding: 12px; align-items: flex-start; }
+    .app { flex-direction: column; height: auto; }
+    .sidebar {
+      width: 100%; flex-direction: row; padding: 10px;
+      overflow-x: auto; overflow-y: hidden;
+    }
+    .logo { display: none; }
+    .side-foot { margin: 0; padding: 0; }
+    .side-foot a { padding: 9px 12px; }
+    .nav-item { padding: 9px 14px; font-size: 14px; }
+    .content { min-height: 540px; }
+    .panel { padding: 20px 16px; }
+    .row { flex-direction: column; }
+    .row img { width: 100%; height: 170px; }
+    .toolbar input#newSid,
+    .toolbar input#newName,
+    .toolbar input#newPwd { width: 100%; flex: none; }
+    .toolbar button { width: 100%; }
+    .mini-row .why { white-space: normal; }
+    .badges { justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ==================== 左侧导航 ==================== -->
+  <nav class="sidebar">
+
+    <!-- 当前登录人 -->
+    <div class="logo">
+      <div class="mark">◆</div>
+      <div class="who">
+        <div class="nm">{{ session.name or '未登录' }}</div>
+        <div class="rl">{{ session.role or 'guest' }}</div>
+      </div>
+    </div>
+
+    <!-- 第一行：班级详情 -->
+    <div class="nav-item active" data-target="class">
+      <i class="icon">🏫</i> 班级详情
+    </div>
+    <div class="nav-item" data-target="leave">
+      <i class="icon">📝</i> 请假学生
+    </div>
+    <div class="nav-item" data-target="account">
+      <i class="icon">👤</i> 账号管理
+    </div>
+    <div class="nav-item" data-target="chart">
+      <i class="icon">📊</i> 数据统计
+    </div>
+    <div class="nav-item" data-target="setting">
+      <i class="icon">⚙️</i> 系统设置
+    </div>
+
+    <!-- 底部：退出登录 -->
+    <div class="side-foot">
+      <a href="/logout">
+        <i class="icon">🚪</i> 退出登录
+      </a>
+    </div>
+  </nav>
+
+  <!-- ==================== 右侧界面 ==================== -->
+  <main class="content">
+
+    <!-- ---------- 1. 班级详情（默认打开） ---------- -->
+    <section class="panel active" id="class">
+      <h2>班级详情</h2>
+      <p class="subtitle">2603 班 · 班级概览</p>
+
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-icon">🏫</div>
+          <div class="stat-num">2603</div>
+          <div class="stat-label">班级编号</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-num" id="statStudents">0</div>
+          <div class="stat-label">学生总数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📝</div>
+          <div class="stat-num" id="statLeave">0</div>
+          <div class="stat-label">请假记录</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-num" id="statRate">0%</div>
+          <div class="stat-label">请假占比</div>
+        </div>
+      </div>
+
+      <p class="sec-title">最近请假</p>
+      <div class="card" id="recentLeave"></div>
+    </section>
+
+    <!-- ---------- 2. 请假学生 ---------- -->
+    <section class="panel" id="leave">
+      <h2>请假学生</h2>
+      <p class="subtitle">班级请假记录</p>
+      <div class="list" id="list"></div>
+    </section>
+
+    <!-- ---------- 3. 账号管理 ---------- -->
+    <section class="panel" id="account">
+      <h2>账号管理</h2>
+      <p class="subtitle">班级学生账号</p>
+
+      <div class="toolbar">
+        <input id="newSid"  type="number" placeholder="学号" min="1">
+        <input id="newName" type="text"   placeholder="姓名">
+        <input id="newPwd"  type="text"   placeholder="初始密码" value="123456">
+        <button id="addStudentBtn">添加学生</button>
+      </div>
+
+      <div class="list" id="studentList"></div>
+    </section>
+
+    <!-- ---------- 4. 数据统计（待接入） ---------- -->
+    <section class="panel" id="chart">
+      <h2>数据统计</h2>
+      <p class="subtitle">模块待接入</p>
+      <div class="placeholder">
+        <div class="ph-icon">📊</div>
+        <div>该模块尚未接入，请在此处挂载你的组件</div>
+        <code>Panels.chart = { mount(el) { /* ... */ } }</code>
+      </div>
+    </section>
+
+    <!-- ---------- 5. 系统设置（待接入） ---------- -->
+    <section class="panel" id="setting">
+      <h2>系统设置</h2>
+      <p class="subtitle">模块待接入</p>
+      <div class="placeholder">
+        <div class="ph-icon">⚙️</div>
+        <div>该模块尚未接入，请在此处挂载你的组件</div>
+        <code>Panels.setting = { mount(el) { /* ... */ } }</code>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ============================================================
+     数据注入位
+     注意：students 里绝对不能包含 password 字段！
+     ============================================================ -->
+<script type="application/json" id="leave-data">{{ (datas or []) | tojson }}</script>
+<script type="application/json" id="student-data">{{ (students or []) | tojson }}</script>
+
+<script>
+/* ============================================================
+   0. 通用工具
+   ============================================================ */
+function toast(msg, type) {
+  var el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "toast show" + (type ? " " + type : "");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { el.className = "toast"; }, 2400);
+}
+
+function readJSON(id, fallback) {
+  try {
+    var val = JSON.parse(document.getElementById(id).textContent);
+    return Array.isArray(val) ? val : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+
+/* ============================================================
+   1. 静态演示数据
+   ============================================================ */
+var DEMO_LEAVE = [
+  { student_id: "20260301", name: "张伟",
+    six_day_reason: "发热 38.5℃，医院建议居家休息三天，已附诊断证明。",
+    time: "2026-10-12", picture: "" },
+  { student_id: "20260305", name: "陈静",
+    six_day_reason: "家中有急事需返回老家处理，预计请假两天。",
+    time: "2026-10-11", picture: "" },
+  { student_id: "20260309", name: "周杰",
+    six_day_reason: "参加市青少年科技创新大赛，需请假一天。",
+    time: "2026-10-10", picture: "" }
+];
+
+var DEMO_STUDENTS = [
+  { student_id: "20260301", name: "张伟", has_password: true,  role: "admin"   },
+  { student_id: "20260302", name: "王芳", has_password: true,  role: "student" },
+  { student_id: "20260303", name: "李娜", has_password: false, role: "student" }
+];
+
+
+/* ============================================================
+   2. 读取数据
+   ============================================================ */
+var leaveData   = readJSON("leave-data",   DEMO_LEAVE);
+var studentData = readJSON("student-data", DEMO_STUDENTS);
+
+
+/* ============================================================
+   3. 图片处理
+   ============================================================ */
+var PLACEHOLDER = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">' +
+  '<rect width="120" height="120" fill="#eef1f5"/>' +
+  '<text x="60" y="65" font-size="12" fill="#a9b2c1" text-anchor="middle" ' +
+  'font-family="sans-serif">暂无图片</text></svg>'
+);
+
+// 从 base64 开头几个字符猜出图片格式
+// 不猜的话统一标成 jpeg，PNG 可能显示不出来
+function guessMime(b64) {
+  if (b64.startsWith("iVBORw0KGgo")) return "image/png";
+  if (b64.startsWith("R0lGOD"))      return "image/gif";
+  if (b64.startsWith("UklGR"))       return "image/webp";
+  return "image/jpeg";               // /9j/ 开头就是 jpeg
+}
+
+function toImageUrl(pic) {
+  if (!pic) return "";
+
+  if (typeof pic === "string") {
+    if (pic.startsWith("data:")) return pic;
+    return "data:" + guessMime(pic) + ";base64," + pic;
+  }
+
+  var arr = null;
+  if (Array.isArray(pic)) {
+    arr = pic;
+  } else if (pic.type === "Buffer" && Array.isArray(pic.data)) {
+    arr = pic.data;
+  }
+
+  if (arr) {
+    // 字节数组：看前几个字节判断格式（FFD8=JPEG, 8950=PNG, 4749=GIF, 5249=WEBP）
+    var head = arr.slice(0, 4);
+    var type = "image/jpeg";
+    if (head[0] === 0x89 && head[1] === 0x50) type = "image/png";
+    else if (head[0] === 0x47 && head[1] === 0x49) type = "image/gif";
+    else if (head[0] === 0x52 && head[1] === 0x49) type = "image/webp";
+
+    var bytes = new Uint8Array(arr);
+    var blob = new Blob([bytes], { type: type });
+    return URL.createObjectURL(blob);
+  }
+
+  return "";
+}
+
+
+/* ============================================================
+   4. 渲染：班级详情
+   ============================================================ */
+function renderClassPanel() {
+  // 只统计 role === 'student' 的账号（排除 superuser / only_user）
+  var nStudents = studentData.filter(function (s) {
+    return (s.role || "student") === "student";
+  }).length;
+  var nLeave    = leaveData.length;
+
+  document.getElementById("statStudents").textContent = nStudents;
+  document.getElementById("statLeave").textContent    = nLeave;
+
+  var rate = nStudents > 0 ? Math.round((nLeave / nStudents) * 100) : 0;
+  document.getElementById("statRate").textContent = rate + "%";
+
+  var box = document.getElementById("recentLeave");
+  box.innerHTML = "";
+
+  if (nLeave === 0) {
+    box.innerHTML = '<div class="empty">暂无请假记录</div>';
+    return;
+  }
+
+  leaveData.slice(0, 5).forEach(function (d) {
+    var row = document.createElement("div");
+    row.className = "mini-row";
+
+    var dot = document.createElement("span");
+    dot.className = "dot";
+
+    var who = document.createElement("span");
+    who.className = "who";
+    who.textContent = d.name == null ? "" : d.name;
+
+    var why = document.createElement("span");
+    why.className = "why";
+    why.textContent = d.six_day_reason == null ? "" : d.six_day_reason;
+    why.title = why.textContent;
+
+    var when = document.createElement("span");
+    when.className = "when";
+    when.textContent = d.time == null ? "" : d.time;
+
+    row.appendChild(dot);
+    row.appendChild(who);
+    row.appendChild(why);
+    row.appendChild(when);
+    box.appendChild(row);
+  });
+}
+
+
+/* ============================================================
+   5. 渲染：请假列表
+   ============================================================ */
+function renderLeaveList() {
+  var list = document.getElementById("list");
+  list.innerHTML = "";
+
+  if (!leaveData || leaveData.length === 0) {
+    list.innerHTML = '<div class="empty">暂无请假记录</div>';
+    return;
+  }
+
+  leaveData.forEach(function (d) {
+    var row = document.createElement("div");
+    row.className = "row";
+
+    var img = document.createElement("img");
+    var url = toImageUrl(d.picture);
+    img.src = url || PLACEHOLDER;
+    img.alt = "请假图片";
+    img.onerror = function () { img.onerror = null; img.src = PLACEHOLDER; };
+
+    var info = document.createElement("div");
+    info.className = "info";
+
+    var fields = [
+      ["学号",     d.student_id],
+      ["姓名",     d.name],
+      ["请假理由", d.six_day_reason],
+      ["时间",     d.time]
+    ];
+
+    fields.forEach(function (pair) {
+      var line = document.createElement("div");
+      line.className = "line";
+
+      var lb = document.createElement("span");
+      lb.className = "label";
+      lb.textContent = pair[0] + "：";
+
+      line.appendChild(lb);
+      line.appendChild(document.createTextNode(pair[1] == null ? "" : pair[1]));
+      info.appendChild(line);
+    });
+
+    row.appendChild(img);
+    row.appendChild(info);
+    list.appendChild(row);
+  });
+}
+
+
+/* ============================================================
+   6. 渲染：学生账号列表（带密码状态 + 角色徽章）
+   ============================================================ */
+function renderStudentList() {
+  var box = document.getElementById("studentList");
+  box.innerHTML = "";
+
+  if (!studentData || studentData.length === 0) {
+    box.innerHTML = '<div class="empty">暂无学生账号</div>';
+    return;
+  }
+
+  studentData.forEach(function (s) {
+    var card = document.createElement("div");
+    card.className = "student-card";
+
+    // --- 头像 ---
+    var avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = (s.name || "?").charAt(0);
+
+    // --- 姓名 + 学号 ---
+    var meta = document.createElement("div");
+    meta.className = "meta";
+
+    var nm = document.createElement("div");
+    nm.className = "nm";
+    nm.textContent = s.name == null ? "" : s.name;
+
+    var sid = document.createElement("div");
+    sid.className = "sid";
+    sid.textContent = "学号 " + (s.student_id == null ? "" : s.student_id);
+
+    meta.appendChild(nm);
+    meta.appendChild(sid);
+
+    // --- 徽章：密码状态 + 角色 ---
+    var badges = document.createElement("div");
+    badges.className = "badges";
+
+    // 密码状态（后端传 has_password 布尔值，绝不传哈希）
+    var hasPwd = s.has_password === true || s.has_password === 1;
+    var bPwd = document.createElement("span");
+    bPwd.className = "badge " + (hasPwd ? "ok" : "no");
+    bPwd.textContent = hasPwd ? "密码已设置" : "未设置密码";
+    badges.appendChild(bPwd);
+
+    // 角色
+    var isAdmin = s.role === "admin";
+    var bRole = document.createElement("span");
+    bRole.className = "badge " + (isAdmin ? "adm" : "stu");
+    bRole.textContent = isAdmin ? "管理员" : "学生";
+    badges.appendChild(bRole);
+
+    card.appendChild(avatar);
+    card.appendChild(meta);
+    card.appendChild(badges);
+    box.appendChild(card);
+  });
+}
+
+
+/* ============================================================
+   7. 添加学生（带初始密码）
+   ============================================================ */
+function bindAddStudent() {
+  var btn = document.getElementById("addStudentBtn");
+  if (!btn || btn._bound) return;
+  btn._bound = true;
+
+  btn.addEventListener("click", function () {
+    var sidEl  = document.getElementById("newSid");
+    var nameEl = document.getElementById("newName");
+    var pwdEl  = document.getElementById("newPwd");
+
+    var sid  = sidEl.value.trim();
+    var name = nameEl.value.trim();
+    var pwd  = pwdEl.value.trim();
+
+    if (!sid || !name) {
+      toast("学号和姓名不能为空", "err");
+      return;
+    }
+    if (!pwd) {
+      toast("请设置初始密码", "err");
+      return;
+    }
+    if (pwd.length < 6) {
+      toast("密码至少 6 位", "err");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "添加中…";
+
+    fetch("/api/add_student", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        student_id: Number(sid),
+        name: name,
+        password: pwd
+      })
+    })
+      .then(function (res) {
+        if (!res.ok && res.status !== 400) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (r) {
+        if (r.ok) {
+          toast(r.msg || "添加成功", "ok");
+          sidEl.value = "";
+          nameEl.value = "";
+          pwdEl.value = "123456";
+          setTimeout(function () { location.reload(); }, 700);
+        } else {
+          toast(r.msg || "添加失败", "err");
+        }
+      })
+      .catch(function (err) {
+        console.error(err);
+        toast("网络或服务异常：" + err.message, "err");
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = "添加学生";
+      });
+  });
+}
+
+
+/* ============================================================
+   8. 模块注册表
+   ============================================================ */
+var Panels = window.Panels = window.Panels || {};
+
+Panels.class = {
+  mounted: false,
+  mount: function (el) {
+    if (this.mounted) return;
+    renderClassPanel();
+    this.mounted = true;
+  }
+};
+
+Panels.leave = {
+  mounted: false,
+  mount: function (el) {
+    if (this.mounted) return;
+    renderLeaveList();
+    this.mounted = true;
+  }
+};
+
+Panels.account = {
+  mounted: false,
+  mount: function (el) {
+    if (this.mounted) return;
+    renderStudentList();
+    bindAddStudent();
+    this.mounted = true;
+  }
+};
+
+
+/* ============================================================
+   9. 导航切换
+   ============================================================ */
+var navItems = document.querySelectorAll(".nav-item");
+var panels   = document.querySelectorAll(".panel");
+
+function switchTo(targetId) {
+  navItems.forEach(function (i) {
+    i.classList.toggle("active", i.dataset.target === targetId);
+  });
+
+  panels.forEach(function (p) {
+    p.classList.toggle("active", p.id === targetId);
+  });
+
+  var el  = document.getElementById(targetId);
+  var mod = Panels[targetId];
+  if (mod && typeof mod.mount === "function") mod.mount(el);
+
+  document.dispatchEvent(new CustomEvent("panel:change", {
+    detail: { id: targetId, el: el }
+  }));
+}
+
+navItems.forEach(function (item) {
+  item.addEventListener("click", function () {
+    switchTo(item.dataset.target);
+  });
+});
+
+
+/* ============================================================
+   10. 首屏
+   ============================================================ */
+(function init() {
+  var active = document.querySelector(".nav-item.active");
+  switchTo(active ? active.dataset.target : "class");
+})();
+</script>
+
+</body>
+</html>

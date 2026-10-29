@@ -133,11 +133,12 @@ def compare(datas):
     return text, False
 
 # ==================== 角色 → 默认首页 ====================
-# 现在只有「后台录入」这一个管理页，所以班委和管理员都跳这儿
-# 等管理控制台做出来，管理员再单独跳过去
+# 登录成功后，按身份送去不同的首页
 def _home_of(role):
     """每个角色登录后的默认落地页"""
-    if role in ("admin", "only_user"):
+    if role == "only_user":
+        return url_for("only_user")
+    if role == "admin":
         return url_for("superuser")
     return url_for("index")
 
@@ -308,6 +309,68 @@ def superuser():
             sql.close()
 
     return render_template("superuser.html")
+
+# 唯一人员界面
+@app.route('/only_user')
+@role_required("only_user")             # 只有 only_user 能进
+def only_user():
+    sql = ClassSQL()
+    try:
+        # 先把要用的表建好，表已经在了就会跳过
+        sql.create_table(sql.class_funds_sql)
+        sql.create_table(sql.students_table)
+
+        # 查所有请假记录
+        rows = sql.get_class_funds_sql() or []
+        datas = []
+        for r in rows:
+            datas.append({
+                'student_id': r['student_id'],
+                'name': r['name'],
+                'six_day_reason': r['six_day_reason'],
+                'time': str(r['time']),
+                # 图片是二进制，要转成文本才能放进 HTML
+                'picture': base64.b64encode(r['picture']).decode('utf-8') if r['picture'] else ''
+            })
+
+        # 再查所有学生账号
+        students = sql.get_student_id() or []
+    finally:
+        sql.close()
+
+    return render_template("only_user.html", datas=datas, students=students)
+
+
+# 添加学生账号
+@app.route('/api/add_student', methods=["POST"])
+@role_required("admin")                 # admin 和 only_user 能调
+def add_student():
+    # 取出前端填的学号、姓名、密码
+    data = request.get_json(silent=True) or {}
+    student_id = data.get("student_id")
+    name       = (data.get("name") or "").strip()
+    password   = data.get("password") or ""
+
+    # 学号姓名不能空
+    if not student_id or not name:
+        return jsonify({"ok": False, "msg": "学号和姓名不能为空"}), 400
+    # 密码太短不让过
+    if len(password) < 6:
+        return jsonify({"ok": False, "msg": "密码至少 6 位"}), 400
+
+    sql = ClassSQL()
+    try:
+        # 确保表存在
+        sql.create_table(sql.students_table)
+        # 密码先哈希再存，数据库里看不到明文
+        sql.take_student_sql(name, student_id, generate_password_hash(password))
+        return jsonify({"ok": True, "msg": "添加成功"})
+    except Exception as e:
+        # 学号重复时给个好懂一点的提示
+        msg = "学号已存在" if "Duplicate" in str(e) else f"添加失败：{e}"
+        return jsonify({"ok": False, "msg": msg}), 400 if "Duplicate" in str(e) else 500
+    finally:
+        sql.close()
 
 # 本地运行时用这个入口，正式上线是 gunicorn 启动的
 if __name__ == '__main__':

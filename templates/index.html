@@ -161,6 +161,27 @@
     </a>
     {% endif %}
 
+    <!-- 仅唯一用户 -->
+    {% if session.role == 'only_user' %}
+    <a class="card owner-only" href="{{ url_for('only_user') }}">
+      <span class="ico">⚙️</span>
+      <div class="ttl">管理控制台</div>
+      <div class="desc">班级概览、请假记录、学生账号管理</div>
+    </a>
+    {% endif %}
+
+  </div>
+
+  <!-- ================= 权限说明 ================= -->
+  <div class="lock-tip">
+    <b>当前权限：</b>
+    {% if session.role == 'only_user' %}
+      唯一用户 —— 可访问全部功能（班费公示 / 请假 / 后台录入 / 管理控制台）
+    {% elif session.role == 'admin' %}
+      超级用户 —— 可访问班费公示 / 请假 / 后台录入，<b>无管理控制台权限</b>
+    {% else %}
+      普通用户 —— 仅可访问班费公示 / 请假，<b>无后台录入与管理控制台权限</b>
+    {% endif %}
   </div>
 
 </div>
