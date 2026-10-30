@@ -1,0 +1,572 @@
+{# =====================================================================
+   虚拟卡通助教「班班」
+   —— 除登录页外，每个页面都 include 一次即可
+   用法：{% include "_assistant.html" %}
+   ===================================================================== #}
+
+<style>
+  /* ============ 悬浮球 ============ */
+  #bb-fab {
+    position: fixed;
+    right: 26px;
+    bottom: 26px;
+    width: 68px;
+    height: 68px;
+    border: 0;
+    border-radius: 50%;
+    padding: 0;
+    cursor: pointer;
+    background: linear-gradient(145deg, #60a5fa, #3b82f6 55%, #4f46e5);
+    box-shadow: 0 10px 28px rgba(59, 130, 246, .48),
+                0 2px 6px rgba(15, 30, 60, .2);
+    z-index: 9998;
+    display: grid;
+    place-items: center;
+    animation: bb-bob 3.2s ease-in-out infinite;
+    transition: transform .22s ease, box-shadow .22s ease;
+  }
+  #bb-fab:hover {
+    transform: scale(1.08);
+    box-shadow: 0 14px 36px rgba(59, 130, 246, .62),
+                0 2px 8px rgba(15, 30, 60, .25);
+    animation-play-state: paused;
+  }
+  #bb-fab:active { transform: scale(.96); }
+
+  @keyframes bb-bob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-7px); }
+  }
+
+  /* 呼吸光圈 */
+  #bb-fab::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(96, 165, 250, .55);
+    animation: bb-ring 2.4s ease-out infinite;
+    pointer-events: none;
+  }
+  @keyframes bb-ring {
+    0%   { transform: scale(.92); opacity: .85; }
+    70%  { transform: scale(1.28); opacity: 0; }
+    100% { transform: scale(1.28); opacity: 0; }
+  }
+
+  /* 未读小红点 */
+  #bb-dot {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #ef4444;
+    border: 2px solid #fff;
+    display: none;
+  }
+  #bb-dot.on { display: block; }
+
+  /* 卡通形象容器 */
+  #bb-fab .bb-face {
+    width: 46px;
+    height: 46px;
+    display: block;
+  }
+
+  /* 眨眼 */
+  .bb-eyelid {
+    transform-origin: center;
+    animation: bb-blink 4.6s infinite;
+  }
+  @keyframes bb-blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95%           { transform: scaleY(.08); }
+  }
+
+  /* ============ 打招呼气泡 ============ */
+  #bb-hint {
+    position: fixed;
+    right: 106px;
+    bottom: 40px;
+    max-width: 232px;
+    background: #fff;
+    color: #334155;
+    font-size: 13.5px;
+    line-height: 1.7;
+    padding: 12px 15px;
+    border-radius: 14px 14px 4px 14px;
+    box-shadow: 0 10px 30px rgba(15, 30, 60, .16);
+    border: 1px solid #e4eaf2;
+    z-index: 9998;
+    opacity: 0;
+    transform: translateY(8px) scale(.96);
+    transition: opacity .3s ease, transform .3s ease;
+    pointer-events: none;
+  }
+  #bb-hint.on { opacity: 1; transform: translateY(0) scale(1); }
+
+  /* ============ 对话面板 ============ */
+  #bb-panel {
+    position: fixed;
+    right: 26px;
+    bottom: 108px;
+    width: 358px;
+    height: 500px;
+    max-height: calc(100vh - 150px);
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 24px 64px rgba(15, 30, 60, .26);
+    border: 1px solid #e4eaf2;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(16px) scale(.97);
+    transform-origin: bottom right;
+    transition: opacity .26s ease, transform .26s ease, visibility .26s;
+  }
+  #bb-panel.on { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+
+  /* --- 头部 --- */
+  #bb-head {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 14px 16px;
+    background: linear-gradient(120deg, #3b82f6, #6366f1);
+    color: #fff;
+    flex-shrink: 0;
+  }
+  #bb-head .bb-mini {
+    width: 38px; height: 38px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, .19);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    backdrop-filter: blur(4px);
+  }
+  #bb-head .bb-info { flex: 1; min-width: 0; line-height: 1.35; }
+  #bb-head .bb-nm {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .3px;
+  }
+  #bb-head .bb-st {
+    font-size: 11.5px;
+    opacity: .86;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  #bb-head .bb-live {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 0 3px rgba(74, 222, 128, .28);
+  }
+  #bb-close {
+    width: 30px; height: 30px;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .16);
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .2s;
+  }
+  #bb-close:hover { background: rgba(255, 255, 255, .3); }
+
+  /* --- 消息区 --- */
+  #bb-msgs {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 14px 8px;
+    background: #f7f9fc;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scroll-behavior: smooth;
+  }
+  #bb-msgs::-webkit-scrollbar { width: 5px; }
+  #bb-msgs::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+  .bb-row { display: flex; gap: 8px; align-items: flex-start; }
+  .bb-row.me { flex-direction: row-reverse; }
+
+  .bb-av {
+    width: 30px; height: 30px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 15px;
+    background: linear-gradient(145deg, #60a5fa, #4f46e5);
+  }
+  .bb-row.me .bb-av {
+    background: linear-gradient(145deg, #cbd5e1, #94a3b8);
+    font-size: 13px;
+  }
+
+  .bb-bubble {
+    max-width: calc(100% - 46px);
+    padding: 10px 13px;
+    border-radius: 13px;
+    font-size: 13.8px;
+    line-height: 1.75;
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+  .bb-row.bot .bb-bubble {
+    background: #fff;
+    color: #2b3650;
+    border: 1px solid #e8eef7;
+    border-top-left-radius: 4px;
+    box-shadow: 0 1px 3px rgba(15, 30, 60, .05);
+  }
+  .bb-row.me .bb-bubble {
+    background: linear-gradient(135deg, #3b82f6, #4f46e5);
+    color: #fff;
+    border-top-right-radius: 4px;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, .3);
+  }
+
+  /* 打字中 */
+  .bb-typing { display: flex; gap: 4px; padding: 4px 2px; }
+  .bb-typing i {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #93a4bd;
+    animation: bb-type 1.2s infinite;
+  }
+  .bb-typing i:nth-child(2) { animation-delay: .18s; }
+  .bb-typing i:nth-child(3) { animation-delay: .36s; }
+  @keyframes bb-type {
+    0%, 60%, 100% { transform: translateY(0); opacity: .45; }
+    30%           { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* --- 快捷问题 --- */
+  #bb-chips {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+    padding: 0 14px 10px;
+    background: #f7f9fc;
+    flex-shrink: 0;
+  }
+  #bb-chips button {
+    padding: 6px 12px;
+    border: 1px solid #d7e2f0;
+    border-radius: 20px;
+    background: #fff;
+    color: #4a5b74;
+    font-size: 12.5px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .18s, border-color .18s, color .18s;
+  }
+  #bb-chips button:hover {
+    background: #eef4ff;
+    border-color: #a9c5ef;
+    color: #2563eb;
+  }
+
+  /* --- 输入区 --- */
+  #bb-inputbar {
+    display: flex;
+    gap: 8px;
+    padding: 11px 13px;
+    border-top: 1px solid #e8eef7;
+    background: #fff;
+    flex-shrink: 0;
+  }
+  #bb-input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 13px;
+    border: 1px solid #d7dfeb;
+    border-radius: 20px;
+    font-size: 13.8px;
+    font-family: inherit;
+    outline: none;
+    background: #f7f9fc;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+  }
+  #bb-input:focus {
+    border-color: #3b82f6;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .13);
+  }
+  #bb-send {
+    width: 42px;
+    flex-shrink: 0;
+    border: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #4f46e5);
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform .18s, box-shadow .18s, opacity .18s;
+  }
+  #bb-send:hover:not(:disabled) {
+    transform: scale(1.06);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, .45);
+  }
+  #bb-send:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ============ 移动端 ============ */
+  @media (max-width: 520px) {
+    #bb-fab { right: 16px; bottom: 16px; width: 60px; height: 60px; }
+    #bb-fab .bb-face { width: 40px; height: 40px; }
+    #bb-panel {
+      right: 10px;
+      left: 10px;
+      bottom: 86px;
+      width: auto;
+      height: auto;
+      max-height: calc(100vh - 120px);
+    }
+    #bb-hint { right: 88px; bottom: 30px; max-width: 190px; }
+  }
+</style>
+
+{# ============ 打招呼气泡 ============ #}
+<div id="bb-hint">你好呀，{{ session.name or '同学' }}～我是<b>班班</b>，有问题随时问我 😊</div>
+
+{# ============ 悬浮卡通按钮 ============ #}
+<button id="bb-fab" type="button" title="问班班">
+  <span id="bb-dot"></span>
+  <svg class="bb-face" viewBox="0 0 100 100" aria-hidden="true">
+    <defs>
+      <linearGradient id="bbGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%"   stop-color="#ffffff"/>
+        <stop offset="100%" stop-color="#e3f0ff"/>
+      </linearGradient>
+    </defs>
+
+    <!-- 天线 -->
+    <line x1="50" y1="30" x2="50" y2="13" stroke="#bfdbfe" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="50" cy="10" r="5.6" fill="#fbbf24">
+      <animate attributeName="r" values="5.6;6.6;5.6" dur="1.8s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- 头 -->
+    <ellipse cx="50" cy="58" rx="33" ry="31" fill="url(#bbGrad)" stroke="#bfdbfe" stroke-width="2"/>
+
+    <!-- 眼睛 -->
+    <g class="bb-eyelid">
+      <ellipse cx="38" cy="55" rx="6.6" ry="7.8" fill="#1e2a44"/>
+      <ellipse cx="62" cy="55" rx="6.6" ry="7.8" fill="#1e2a44"/>
+      <circle cx="40.2" cy="52" r="2.4" fill="#fff"/>
+      <circle cx="64.2" cy="52" r="2.4" fill="#fff"/>
+    </g>
+
+    <!-- 腮红 -->
+    <circle cx="27" cy="64" r="4.6" fill="#fca5a5" opacity=".6"/>
+    <circle cx="73" cy="64" r="4.6" fill="#fca5a5" opacity=".6"/>
+
+    <!-- 微笑 -->
+    <path d="M40 70 Q50 79 60 70" stroke="#1e2a44" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>
+</button>
+
+{# ============ 对话面板 ============ #}
+<div id="bb-panel">
+
+  <div id="bb-head">
+    <div class="bb-mini">
+      <svg viewBox="0 0 100 100" width="30" height="30" aria-hidden="true">
+        <circle cx="50" cy="10" r="6" fill="#fbbf24"/>
+        <line x1="50" y1="30" x2="50" y2="14" stroke="#dbeafe" stroke-width="3.4" stroke-linecap="round"/>
+        <ellipse cx="50" cy="58" rx="33" ry="31" fill="#fff" opacity=".95"/>
+        <ellipse cx="38" cy="55" rx="6.6" ry="7.8" fill="#1e2a44"/>
+        <ellipse cx="62" cy="55" rx="6.6" ry="7.8" fill="#1e2a44"/>
+        <path d="M40 70 Q50 79 60 70" stroke="#1e2a44" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="bb-info">
+      <div class="bb-nm">班班 · 班级小助手</div>
+      <div class="bb-st"><span class="bb-live"></span>在线 · 2603 班</div>
+    </div>
+    <button id="bb-close" type="button" title="收起">✕</button>
+  </div>
+
+  <div id="bb-msgs"></div>
+
+  <div id="bb-chips">
+    <button type="button" data-q="班费现在收支情况怎么样？">班费收支情况</button>
+    <button type="button" data-q="最近有哪些同学请假了？">最近谁请假了</button>
+    <button type="button" data-q="怎么提交请假申请？">怎么请假</button>
+    <button type="button" data-q="班级一共有多少同学？">班级人数</button>
+  </div>
+
+  <div id="bb-inputbar">
+    <input id="bb-input" type="text" placeholder="问班班任何问题…" autocomplete="off" maxlength="500">
+    <button id="bb-send" type="button" title="发送">➤</button>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var fab    = document.getElementById("bb-fab");
+  var panel  = document.getElementById("bb-panel");
+  var hint   = document.getElementById("bb-hint");
+  var dot    = document.getElementById("bb-dot");
+  var msgs   = document.getElementById("bb-msgs");
+  var input  = document.getElementById("bb-input");
+  var sendBn = document.getElementById("bb-send");
+  var closeB = document.getElementById("bb-close");
+  var chips  = document.getElementById("bb-chips");
+
+  var USER_NAME = "{{ session.name or '同学' }}";
+  var busy = false;
+  var opened = false;
+
+  /* ---------------- 消息渲染 ---------------- */
+  function addRow(role, html) {
+    var row = document.createElement("div");
+    row.className = "bb-row " + (role === "me" ? "me" : "bot");
+
+    var av = document.createElement("div");
+    av.className = "bb-av";
+    av.textContent = role === "me" ? (USER_NAME.charAt(0) || "我") : "🤖";
+
+    var bubble = document.createElement("div");
+    bubble.className = "bb-bubble";
+    if (html) bubble.innerHTML = html;          // 仅用于打字动画，不含用户输入
+
+    row.appendChild(av);
+    row.appendChild(bubble);
+    msgs.appendChild(row);
+    msgs.scrollTop = msgs.scrollHeight;
+    return bubble;
+  }
+
+  function addText(role, text) {
+    var row = document.createElement("div");
+    row.className = "bb-row " + (role === "me" ? "me" : "bot");
+
+    var av = document.createElement("div");
+    av.className = "bb-av";
+    av.textContent = role === "me" ? (USER_NAME.charAt(0) || "我") : "🤖";
+
+    var bubble = document.createElement("div");
+    bubble.className = "bb-bubble";
+    bubble.textContent = text;                  // ★ textContent，防 XSS
+
+    row.appendChild(av);
+    row.appendChild(bubble);
+    msgs.appendChild(row);
+    msgs.scrollTop = msgs.scrollHeight;
+    return bubble;
+  }
+
+  function addTyping() {
+    return addRow("bot",
+      '<div class="bb-typing"><i></i><i></i><i></i></div>');
+  }
+
+  /* ---------------- 发送 ---------------- */
+  function ask(question) {
+    if (busy) return;
+    question = (question || "").trim();
+    if (!question) return;
+
+    addText("me", question);
+    input.value = "";
+    busy = true;
+    sendBn.disabled = true;
+
+    var typing = addTyping();
+
+    fetch("/api/assistant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: question })
+    })
+      .then(function (res) {
+        return res.json().then(function (d) { return { ok: res.ok, data: d }; });
+      })
+      .then(function (r) {
+        typing.parentNode.remove();
+        if (r.data && r.data.ok) {
+          addText("bot", r.data.answer || "（班班没想好怎么回答…）");
+        } else {
+          addText("bot", "😥 " + ((r.data && r.data.msg) || "班班暂时答不上来，稍后再试试"));
+        }
+      })
+      .catch(function (err) {
+        typing.parentNode.remove();
+        addText("bot", "😥 网络出问题了：" + err.message);
+      })
+      .finally(function () {
+        busy = false;
+        sendBn.disabled = false;
+        input.focus();
+      });
+  }
+
+  /* ---------------- 开 / 关 ---------------- */
+  function openPanel() {
+    panel.classList.add("on");
+    fab.style.display = "none";
+    hint.classList.remove("on");
+    dot.classList.remove("on");
+    opened = true;
+
+    if (!msgs.dataset.inited) {
+      addText("bot", "你好呀 " + USER_NAME + "！我是班班 🤖\n"
+        + "我可以帮你查班费收支、看请假记录、讲班级规则。\n"
+        + "有什么想问的，直接说吧～");
+      msgs.dataset.inited = "1";
+    }
+    setTimeout(function () { input.focus(); }, 260);
+  }
+
+  function closePanel() {
+    panel.classList.remove("on");
+    fab.style.display = "grid";
+  }
+
+  fab.addEventListener("click", openPanel);
+  closeB.addEventListener("click", closePanel);
+  sendBn.addEventListener("click", function () { ask(input.value); });
+
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      ask(input.value);
+    }
+  });
+
+  chips.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-q]");
+    if (b) ask(b.getAttribute("data-q"));
+  });
+
+  /* ---------------- 首次进页面打个招呼 ---------------- */
+  setTimeout(function () {
+    if (!opened) {
+      hint.classList.add("on");
+      setTimeout(function () {
+        hint.classList.remove("on");
+        if (!opened) dot.classList.add("on");
+      }, 6500);
+    }
+  }, 1200);
+
+  /* ESC 关闭 */
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && panel.classList.contains("on")) closePanel();
+  });
+})();
+</script>
