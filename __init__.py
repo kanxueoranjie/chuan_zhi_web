@@ -492,20 +492,27 @@ def assistant_chat():
         + "\n\n【班级实时数据】\n" + context
     )
 
-    # 4) 调 AI，出问题就返回 502
+    # 4) 走 AIAPI.chat()：多轮对话 + 自动重试
+    #    注意 chat() 返回的是 message 对象（为了以后能拿 tool_calls），文字在 .content
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": question},
+    ]
+
     try:
-        answer = AI().get_ai(system_prompt, question)
+        msg = AI().chat(messages, temperature=0.7, max_tokens=1200)
     except Exception as e:
         return jsonify({"ok": False, "msg": f"AI 调用失败：{e}"}), 502
 
-    # AI 自己报错的话也当失败处理
-    if not answer or str(answer).startswith("AI 调用失败"):
-        return jsonify({"ok": False, "msg": str(answer) or "AI 没有返回内容"}), 502
+    # 有时候模型把 token 全花在思考上，正文是空的，这种也要当失败处理
+    answer = (msg.content or "").strip()
+    if not answer:
+        return jsonify({"ok": False, "msg": "AI 没有返回内容，请再说一次"}), 502
 
     return jsonify({
         "ok": True,
         "name": ASSISTANT_NAME,
-        "answer": str(answer).strip(),
+        "answer": answer,
     })
 
 # 本地运行时用这个入口，正式上线是 gunicorn 启动的
