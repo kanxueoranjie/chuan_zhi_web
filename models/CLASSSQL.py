@@ -1,7 +1,12 @@
+import logging
+
 import pymysql
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+
+# 数据库出问题时写进日志，不要用 print 往控制台扔
+logger = logging.getLogger(__name__)
 
 # 先把 .env 里的配置读进来
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -85,7 +90,7 @@ class ClassSQL:
                 # 先看看库在不在
                 cursor.execute("SHOW DATABASES LIKE %s",(self.db_name,))
                 if cursor.fetchone():
-                    print(f"数据库{self.db_name}已存在")
+                    logger.info("数据库 %s 已存在", self.db_name)
                     return
                 # 不在才建
                 cursor.execute(f"CREATE DATABASE `{self.db_name}` "
@@ -93,7 +98,7 @@ class ClassSQL:
                                f"COLLATE utf8mb4_unicode_ci")
 
         except pymysql.MySQLError as e:
-            print(f"创建失败{self.db_name}:{e}")
+            logger.exception("创建数据库 %s 失败", self.db_name)
 
     # 建表，表已经在了就会跳过
     def create_table(self,sql):
@@ -119,8 +124,8 @@ class ClassSQL:
             results = cursor.fetchall()
             return results
 
-        except pymysql.MySQLError as e:
-            print(e)
+        except pymysql.MySQLError:
+            logger.exception("查询班费表失败")
 
     # 往请假表里加一条
     def take_class_funds_sql(self,student_id,name,picture,six_day_reason,leave_time):
@@ -140,8 +145,8 @@ class ClassSQL:
             results = cursor.fetchall()
             return results
 
-        except pymysql.MySQLError as e:
-            print(e)
+        except pymysql.MySQLError:
+            logger.exception("查询请假表失败")
             # 查失败返回空列表，上层就不用再判断 None
             return []
 
@@ -170,8 +175,8 @@ class ClassSQL:
         try:
             cursor.execute(sql)
             return cursor.fetchall()
-        except pymysql.MySQLError as e:
-            print(e)
+        except pymysql.MySQLError:
+            logger.exception("查询账号列表失败")
             return []
 
     # 按登录名查一个人，登录时校验密码用
@@ -183,8 +188,8 @@ class ClassSQL:
         try:
             cursor.execute(sql, (username,))
             return cursor.fetchone()          # 没找到返回 None
-        except pymysql.MySQLError as e:
-            print(e)
+        except pymysql.MySQLError:
+            logger.exception("按登录名查账号失败")
             return None
 
     # 用完把连接关掉，不然连接会越攒越多

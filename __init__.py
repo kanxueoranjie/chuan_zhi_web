@@ -22,7 +22,20 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 app = Flask(__name__)
 
 # 登录状态靠它加密，不设会报错
-app.secret_key = os.getenv("SECRET_KEY", "chuan_zhi_web_dev_key_2026")
+# 不写默认值：留个公开的默认值等于谁都能伪造登录状态，缺了就直接启动失败
+app.secret_key = os.getenv("SECRET_KEY")
+if not app.secret_key:
+    raise RuntimeError(
+        ".env 里缺少 SECRET_KEY，请先生成一串再启动\n"
+        '  生成方法：python -c "import secrets;print(secrets.token_urlsafe(32))"'
+    )
+
+# 会话 Cookie 加固：禁止 JS 读取，限制跨站携带
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+# 上传体积上限，超了 Flask 在解析阶段就拒掉，不会先把整个文件读进内存
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024      # 8MB
 
 # 存上一次的 AI 分析结果，数据没变就不用再花钱调用
 _ai_cache = {"signature": None, "text": None, "rows": 0}
@@ -281,7 +294,6 @@ def superuser():
     if request.method == "POST":
         # 取出前端传来的 JSON
         data = request.get_json(silent=True) or {}
-        print(data)                     # 调试用，正式上线可以删
         content = data.get("content")
         money = data.get("money")
         time = data.get("time")
@@ -290,6 +302,14 @@ def superuser():
         # 三项必填，少一项就报错
         if not content or not money or not time:
             return jsonify({"ok": False, "msg": "内容、金额和日期不能为空"}), 400
+
+        # 金额必须是正数，不然 DECIMAL 字段会存成奇怪的值
+        try:
+            money_value = float(money)
+        except (TypeError, ValueError):
+            return jsonify({"ok": False, "msg": "金额必须是数字"}), 400
+        if money_value <= 0:
+            return jsonify({"ok": False, "msg": "金额必须大于 0"}), 400
 
         # 只认 in / out 两个值，其他一律当支出
         if kind not in ("in", "out"):
@@ -514,6 +534,30 @@ def assistant_chat():
         "name": ASSISTANT_NAME,
         "answer": answer,
     })
+
+# ==================== 统一错误页 ====================
+# 不用 Flask 自带的英文报错页，风格和全站保持一致
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("error.html", code=404,
+                           msg="这个页面不存在，可能是地址写错了"), 404
+
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template("error.html", code=500,
+                           msg="服务器出了点问题，请稍后再试"), 500
+
+
+@app.errorhandler(413)
+def upload_too_large(e):
+    # 上传的文件超过 MAX_CONTENT_LENGTH 时 Flask 会抛 413
+    # 接口和表单提交都返回 JSON，前端好统一处理
+    if request.method == "POST":
+        return jsonify({"ok": False, "message": "图片太大了，请压到 5MB 以内"}), 413
+    return render_template("error.html", code=413,
+                           msg="上传的文件太大了，请压缩后再试"), 413
+
 
 # 本地运行时用这个入口，正式上线是 gunicorn 启动的
 if __name__ == '__main__':
